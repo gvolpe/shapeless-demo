@@ -12,5 +12,3 @@ resolvers ++= Seq(
 libraryDependencies ++= Seq(
   "com.chuusai" %% "shapeless" % "2.2.5"
 )
-
-
