@@ -5,7 +5,7 @@ import shapeless._
 import ops.function._
 import syntax.std.function._
 
-object Demo extends App {
+object PolyFunctions extends App {
   import model._
 
   val fn = (b: String, m: String, y: Int) => s"Car: $b $m of the year $y"
@@ -14,13 +14,13 @@ object Demo extends App {
   println(description)
 
   val hlist = 1 :: "Gabi" :: "gvolpe@github.com" :: HNil
-  hlist map showElement
+//  hlist map showElement
 
   println(choose(Set(1, 6, 8, 3))) // Some(1)
   println(choose(Set.empty[Int])) // None
 
-  val setToOption: List[Option[Int]] = List(Set(4, 6), Set.empty[Int]) map choose
-  println(setToOption) // List(Some(4), None)
+//  val setToOption: List[Option[Int]] = List(Set(4, 6), Set.empty[Int]) map choose
+//  println(setToOption) // List(Some(4), None)
 
 }
 
