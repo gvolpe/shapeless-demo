@@ -12,10 +12,27 @@ object DeltaDemo extends App {
   assert(("foo", "bar") == "foo".delta("bar"))
   assert(6 :: ("foo", "bar") :: HNil == (2 :: "foo" :: HNil).delta(8 :: "bar" :: HNil))
   assert(6 :: ("foo", "bar") :: HNil == Foo(2, "foo").delta(Foo(8, "bar")))
-  assert(
-    Bar(true,  "foo",  Some(Bar(true, "bar",  None))).delta(Bar(false, "food", Some(Bar(true, "barf", None)))) ==
-      false :: ("foo", "food") :: Inl(Some(true :: ("bar", "barf") :: Inl(None) :: HNil)) :: HNil
-  )
+
+  val bar1 = Bar(true,  "foo",  Some(Bar(true, "bar",  None)))
+  val bar2 = Bar(false, "food", Some(Bar(true, "barf", None)))
+
+  println(bar1 delta bar2)  // false :: (foo,food) :: Some(true :: (bar,barf) :: None :: HNil) :: HNil
+
+  val foo1 = Foo(3, "foo")
+  val foo2 = Foo(10, "bar")
+
+  println(foo1 delta foo2)  // 7 :: (foo,bar) :: HNil
+
+  val fooList1 = List(Foo(3, "foo"), Foo(76, "list"))
+  val fooList2 = List(Foo(87, "seq"), Foo(10, "bar"))
+
+  val listDelta = for {
+    f1 <- fooList1
+    f2 <- fooList2
+  } yield f1 delta f2
+
+  println(listDelta)        // List(84 :: (foo,seq) :: HNil, 7 :: (foo,bar) :: HNil, 11 :: (list,seq) :: HNil, -66 :: (list,bar) :: HNil)
+
 }
 
 trait Delta[In] {
@@ -47,6 +64,11 @@ object Delta extends Delta0 {
     def apply(before: Int, after: Int): Out = after - before
   }
 
+  implicit val longDelta: Delta.Aux[Long, Long] = new Delta[Long] {
+    type Out = Long
+    def apply(before: Long, after: Long): Out = after - before
+  }
+
   implicit def stringDelta: Delta.Aux[String, (String, String)] = new Delta[String] {
     type Out = (String, String)
     def apply(before: String, after: String): (String, String) = (before, after)
@@ -63,6 +85,21 @@ object Delta extends Delta0 {
       case (None, Some(a))    => Inr(Inr(Inl(a)))
     }
   }
+
+//    implicit def listDelta[T](implicit deltaT: Lazy[Delta[T]]):
+//      Delta.Aux[List[T], List[deltaT.value.Out] :+: T :+: T :+: CNil] = new Delta[List[T]] {
+//      type Out = List[deltaT.value.Out] :+: T :+: T :+: CNil
+//
+////      import syntax.std.traversable._
+//
+//      def apply(before: List[T], after: List[T]): Out = {
+//        val list = for {
+//          b <- before
+//          a <- after
+//        } yield deltaT.value.apply(b, a)
+//        Inl(list(0))
+//      }
+//    }
 
   implicit def deriveHNil: Delta.Aux[HNil, HNil] = new Delta[HNil] {
     type Out = HNil
@@ -81,6 +118,9 @@ object Delta extends Delta0 {
 }
 
 object DeltaSyntax {
+//  implicit class ListDeltaOps[T](val before: List[T]) extends AnyVal {
+//    def delta(after: In)(implicit delta: Lazy[Delta[In]]): delta.value.Out = delta.value(before, after)
+//  }
   implicit class DeltaOps[In](val before: In) extends AnyVal {
     def delta(after: In)(implicit delta: Lazy[Delta[In]]): delta.value.Out = delta.value(before, after)
   }
